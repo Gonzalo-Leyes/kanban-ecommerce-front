@@ -1,4 +1,3 @@
-// Tipos para el Dashboard Kanban
 export interface Task {
   id: string;
   title: string;
@@ -9,7 +8,6 @@ export interface Task {
   updatedAt: Date;
 }
 
-// Tipos para el Catálogo E-commerce
 export interface Product {
   id: number;
   title: string;
@@ -31,10 +29,8 @@ export interface ProductsResponse {
   limit: number;
 }
 
-// Tipos para el tema (dark/light mode)
 export type Theme = 'light' | 'dark';
 
-// Tipos para filtros del catálogo
 export interface ProductFilters {
   category: string;
   sortBy: 'price-asc' | 'price-desc' | 'rating' | 'name';
@@ -44,7 +40,6 @@ export interface ProductFilters {
   minRating?: number;
 }
 
-// Tipos para notificaciones
 export interface Toast {
   id: string;
   type: 'success' | 'error' | 'warning' | 'info';
@@ -53,7 +48,6 @@ export interface Toast {
   duration?: number;
 }
 
-// Tipos para el carrito (callback del ProductCard)
 export interface CartItem {
   productId: number;
   quantity: number;

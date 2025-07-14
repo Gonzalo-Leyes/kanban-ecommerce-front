@@ -213,7 +213,6 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
       </FiltersHeader>
       
       <FiltersGrid>
-        {/* Búsqueda */}
         <FilterGroup>
           <Label htmlFor="search">
             <SearchIcon>🔍</SearchIcon>
@@ -228,7 +227,6 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
           />
         </FilterGroup>
 
-        {/* Categoría */}
         <FilterGroup>
           <Label htmlFor="category">
             <CategoryIcon>📂</CategoryIcon>
@@ -248,7 +246,6 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
           </Select>
         </FilterGroup>
 
-        {/* Rango de precios */}
         <FilterGroup>
           <Label>
             <PriceIcon>💰</PriceIcon>
@@ -273,7 +270,6 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
           </RangeGroup>
         </FilterGroup>
 
-        {/* Rating mínimo */}
         <FilterGroup>
           <Label htmlFor="rating">
             <RatingIcon>⭐</RatingIcon>
@@ -293,7 +289,6 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
           </Select>
         </FilterGroup>
 
-        {/* Ordenamiento */}
         <FilterGroup>
           <Label htmlFor="sort">
             <SortIcon>🔄</SortIcon>

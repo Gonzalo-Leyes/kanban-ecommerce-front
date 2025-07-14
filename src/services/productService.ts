@@ -5,7 +5,6 @@ const FALLBACK_URL = '/data/products.json'
 
 export const fetchProducts = async (): Promise<ProductsResponse> => {
   try {
-    // Intentar obtener desde la API externa
     const response = await fetch(API_URL)
     
     if (!response.ok) {
@@ -18,7 +17,6 @@ export const fetchProducts = async (): Promise<ProductsResponse> => {
     console.warn('Error fetching from API, trying local fallback:', error)
     
     try {
-      // Fallback al archivo local
       const response = await fetch(FALLBACK_URL)
       
       if (!response.ok) {

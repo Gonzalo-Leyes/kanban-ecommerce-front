@@ -5,7 +5,6 @@ import Layout from './components/Layout'
 import LoadingSpinner from './components/LoadingSpinner'
 import ToastContainer from './components/ui/ToastContainer'
 
-// Lazy loading para las páginas
 const Kanban = React.lazy(() => import('./pages/Kanban'))
 const Products = React.lazy(() => import('./pages/Products'))
 
