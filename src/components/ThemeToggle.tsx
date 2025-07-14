@@ -1,49 +1,64 @@
 import React from 'react'
+import styled from 'styled-components'
+import { motion } from 'framer-motion'
 import { useTheme } from '../hooks/useTheme'
+
+const ToggleButton = styled(motion.button)`
+  position: relative;
+  width: 56px;
+  height: 28px;
+  background-color: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+  }
+`
+
+const ToggleIndicator = styled(motion.div)`
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background-color: var(--color-primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+`
 
 const ThemeToggle: React.FC = () => {
   const { theme, toggleTheme } = useTheme()
 
   return (
-    <button
+    <ToggleButton
       onClick={toggleTheme}
-      className="p-2 rounded-md bg-bg-tertiary hover:bg-bg-secondary transition-colors"
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
       aria-label={`Cambiar a tema ${theme === 'light' ? 'oscuro' : 'claro'}`}
       title={`Cambiar a tema ${theme === 'light' ? 'oscuro' : 'claro'}`}
     >
-      {theme === 'light' ? (
-        <svg
-          className="w-5 h-5 text-text-primary"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-          />
-        </svg>
-      ) : (
-        <svg
-          className="w-5 h-5 text-text-primary"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-          />
-        </svg>
-      )}
-    </button>
+      <ToggleIndicator
+        animate={{
+          x: theme === 'dark' ? 24 : 0,
+        }}
+        transition={{
+          type: 'spring',
+          stiffness: 500,
+          damping: 30
+        }}
+      >
+        {theme === 'light' ? '🌞' : '🌚'}
+      </ToggleIndicator>
+    </ToggleButton>
   )
 }
 
-export default ThemeToggle 
+export default ThemeToggle

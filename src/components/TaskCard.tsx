@@ -1,35 +1,224 @@
 import React, { useState } from 'react'
+import styled from 'styled-components'
+import { Draggable } from 'react-beautiful-dnd'
+import { motion } from 'framer-motion'
 import { Task } from '../types'
+import { useTaskStore } from '../store/useTaskStore'
+import { useToast } from '../hooks/useToast'
+
+const CardContainer = styled(motion.div)<{ isDragging: boolean }>`
+  background-color: var(--bg-primary);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  
+  ${({ isDragging }) =>
+    isDragging
+      ? `
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        transform: rotate(5deg);
+        background-color: var(--bg-secondary);
+      `
+      : `
+        &:hover {
+          box-shadow: var(--shadow-md);
+          transform: translateY(-2px);
+        }
+      `}
+`
+
+const TaskHeader = styled.div`
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+`
+
+const TaskTitle = styled.h4`
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.4;
+  flex: 1;
+  margin-right: 8px;
+`
+
+const ActionButtons = styled.div`
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+
+  ${CardContainer}:hover & {
+    opacity: 1;
+  }
+`
+
+const ActionButton = styled.button`
+  background: none;
+  border: none;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: var(--bg-tertiary);
+    transform: scale(1.1);
+  }
+`
+
+const TaskDescription = styled.p`
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+`
+
+const TaskFooter = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+`
+
+const PriorityBadge = styled.span<{ priority: Task['priority'] }>`
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  
+  ${({ priority }) => {
+    switch (priority) {
+      case 'high':
+        return `
+          background-color: var(--color-danger);
+          color: white;
+        `
+      case 'medium':
+        return `
+          background-color: var(--color-warning);
+          color: white;
+        `
+      case 'low':
+        return `
+          background-color: var(--color-success);
+          color: white;
+        `
+      default:
+        return `
+          background-color: var(--color-secondary);
+          color: white;
+        `
+    }
+  }}
+`
+
+const TaskDate = styled.div`
+  font-size: 11px;
+  color: var(--text-muted);
+`
+
+const EditForm = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`
+
+const Input = styled.input`
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+  
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  }
+`
+
+const TextArea = styled.textarea`
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+  resize: none;
+  min-height: 80px;
+  
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  }
+`
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 8px;
+`
+
+const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  ${({ variant = 'secondary' }) =>
+    variant === 'primary'
+      ? `
+        background-color: var(--color-primary);
+        color: white;
+        
+        &:hover {
+          background-color: var(--color-primary-hover);
+        }
+      `
+      : `
+        background-color: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        
+        &:hover {
+          background-color: var(--bg-tertiary);
+        }
+      `}
+`
 
 interface TaskCardProps {
   task: Task
-  onMoveTask: (taskId: string, newStatus: Task['status']) => void
-  onUpdateTask: (id: string, updates: Partial<Task>) => void
-  onDeleteTask: (id: string) => void
+  index: number
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({
-  task,
-  onMoveTask,
-  onUpdateTask,
-  onDeleteTask
-}) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, index }) => {
   const [isEditing, setIsEditing] = useState(false)
   const [editTitle, setEditTitle] = useState(task.title)
   const [editDescription, setEditDescription] = useState(task.description)
-
-  const getPriorityColor = (priority: Task['priority']) => {
-    switch (priority) {
-      case 'high':
-        return 'bg-color-danger'
-      case 'medium':
-        return 'bg-color-warning'
-      case 'low':
-        return 'bg-color-success'
-      default:
-        return 'bg-color-secondary'
-    }
-  }
+  
+  const { updateTask, deleteTask } = useTaskStore()
+  const { addToast } = useToast()
 
   const getPriorityLabel = (priority: Task['priority']) => {
     switch (priority) {
@@ -45,11 +234,26 @@ const TaskCard: React.FC<TaskCardProps> = ({
   }
 
   const handleSave = () => {
-    onUpdateTask(task.id, {
-      title: editTitle,
-      description: editDescription
+    if (!editTitle.trim()) {
+      addToast({
+        type: 'error',
+        title: 'Error',
+        message: 'El título no puede estar vacío'
+      })
+      return
+    }
+
+    updateTask(task.id, {
+      title: editTitle.trim(),
+      description: editDescription.trim()
     })
+    
     setIsEditing(false)
+    addToast({
+      type: 'success',
+      title: 'Tarea actualizada',
+      message: 'Los cambios se han guardado correctamente'
+    })
   }
 
   const handleCancel = () => {
@@ -58,96 +262,97 @@ const TaskCard: React.FC<TaskCardProps> = ({
     setIsEditing(false)
   }
 
-  const handleMove = (newStatus: Task['status']) => {
-    if (newStatus !== task.status) {
-      onMoveTask(task.id, newStatus)
+  const handleDelete = () => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar esta tarea?')) {
+      deleteTask(task.id)
+      addToast({
+        type: 'success',
+        title: 'Tarea eliminada',
+        message: 'La tarea se ha eliminado correctamente'
+      })
     }
   }
 
   return (
-    <div className="bg-bg-primary rounded-lg p-4 shadow-sm border border-border-color hover:shadow-md transition-shadow">
-      {isEditing ? (
-        <div className="space-y-3">
-          <input
-            type="text"
-            value={editTitle}
-            onChange={(e) => setEditTitle(e.target.value)}
-            className="w-full px-3 py-2 border border-border-color rounded-md bg-bg-secondary text-text-primary focus:outline-none focus:ring-2 focus:ring-color-primary"
-            placeholder="Título de la tarea"
-          />
-          <textarea
-            value={editDescription}
-            onChange={(e) => setEditDescription(e.target.value)}
-            className="w-full px-3 py-2 border border-border-color rounded-md bg-bg-secondary text-text-primary focus:outline-none focus:ring-2 focus:ring-color-primary resize-none"
-            rows={3}
-            placeholder="Descripción de la tarea"
-          />
-          <div className="flex gap-2">
-            <button
-              onClick={handleSave}
-              className="btn btn-primary flex-1"
-            >
-              Guardar
-            </button>
-            <button
-              onClick={handleCancel}
-              className="btn flex-1"
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          <div className="flex items-start justify-between">
-            <h4 className="font-medium text-text-primary line-clamp-2">
-              {task.title}
-            </h4>
-            <div className="flex gap-1">
-              <button
-                onClick={() => setIsEditing(true)}
-                className="text-text-secondary hover:text-text-primary"
-                aria-label="Editar tarea"
-              >
-                ✏️
-              </button>
-              <button
-                onClick={() => onDeleteTask(task.id)}
-                className="text-color-danger hover:opacity-80"
-                aria-label="Eliminar tarea"
-              >
-                🗑️
-              </button>
-            </div>
-          </div>
-          
-          <p className="text-sm text-text-secondary line-clamp-3">
-            {task.description}
-          </p>
-          
-          <div className="flex items-center justify-between">
-            <span className={`px-2 py-1 text-xs text-white rounded-full ${getPriorityColor(task.priority)}`}>
-              {getPriorityLabel(task.priority)}
-            </span>
-            
-            <select
-              value={task.status}
-              onChange={(e) => handleMove(e.target.value as Task['status'])}
-              className="text-xs px-2 py-1 border border-border-color rounded bg-bg-secondary text-text-primary focus:outline-none focus:ring-1 focus:ring-color-primary"
-            >
-              <option value="todo">Por Hacer</option>
-              <option value="in-progress">En Progreso</option>
-              <option value="done">Completado</option>
-            </select>
-          </div>
-          
-          <div className="text-xs text-text-muted">
-            Creada: {task.createdAt.toLocaleDateString()}
-          </div>
-        </div>
+    <Draggable draggableId={task.id} index={index}>
+      {(provided, snapshot) => (
+        <CardContainer
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          {...provided.dragHandleProps}
+          isDragging={snapshot.isDragging}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          {isEditing ? (
+            <EditForm>
+              <Input
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="Título de la tarea"
+                autoFocus
+              />
+              <TextArea
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="Descripción de la tarea"
+              />
+              <ButtonGroup>
+                <Button variant="primary" onClick={handleSave}>
+                  Guardar
+                </Button>
+                <Button onClick={handleCancel}>
+                  Cancelar
+                </Button>
+              </ButtonGroup>
+            </EditForm>
+          ) : (
+            <>
+              <TaskHeader>
+                <TaskTitle>{task.title}</TaskTitle>
+                <ActionButtons>
+                  <ActionButton
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setIsEditing(true)
+                    }}
+                    title="Editar tarea"
+                  >
+                    ✏️
+                  </ActionButton>
+                  <ActionButton
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDelete()
+                    }}
+                    title="Eliminar tarea"
+                  >
+                    🗑️
+                  </ActionButton>
+                </ActionButtons>
+              </TaskHeader>
+
+              {task.description && (
+                <TaskDescription>{task.description}</TaskDescription>
+              )}
+
+              <TaskFooter>
+                <PriorityBadge priority={task.priority}>
+                  {getPriorityLabel(task.priority)}
+                </PriorityBadge>
+                <TaskDate>
+                  {task.createdAt.toLocaleDateString('es-ES', {
+                    day: 'numeric',
+                    month: 'short'
+                  })}
+                </TaskDate>
+              </TaskFooter>
+            </>
+          )}
+        </CardContainer>
       )}
-    </div>
+    </Draggable>
   )
 }
 
-export default TaskCard 
+export default TaskCard

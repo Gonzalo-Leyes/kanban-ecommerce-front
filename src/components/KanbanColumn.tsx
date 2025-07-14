@@ -1,63 +1,171 @@
 import React from 'react'
+import styled from 'styled-components'
+import { Droppable } from 'react-beautiful-dnd'
+import { motion } from 'framer-motion'
 import { Task } from '../types'
 import TaskCard from './TaskCard'
+
+const ColumnContainer = styled(motion.div)`
+  background-color: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 20px;
+  min-height: 500px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+
+  &:hover {
+    box-shadow: var(--shadow-md);
+  }
+`
+
+const ColumnHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--border-color);
+`
+
+const ColumnTitle = styled.h3`
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+`
+
+const TaskCount = styled.span`
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+`
+
+const StatusIndicator = styled.div<{ status: Task['status'] }>`
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-left: 8px;
+  
+  ${({ status }) => {
+    switch (status) {
+      case 'todo':
+        return 'background-color: var(--color-warning);'
+      case 'in-progress':
+        return 'background-color: var(--color-primary);'
+      case 'done':
+        return 'background-color: var(--color-success);'
+      default:
+        return 'background-color: var(--color-secondary);'
+    }
+  }}
+`
+
+const TaskList = styled.div<{ isDraggingOver: boolean }>`
+  min-height: 400px;
+  transition: background-color 0.2s ease;
+  border-radius: 8px;
+  padding: 8px;
+  
+  ${({ isDraggingOver }) =>
+    isDraggingOver &&
+    `
+    background-color: var(--bg-tertiary);
+    border: 2px dashed var(--color-primary);
+  `}
+`
+
+const EmptyState = styled(motion.div)`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--text-muted);
+  text-align: center;
+`
+
+const EmptyIcon = styled.div`
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+`
 
 interface KanbanColumnProps {
   title: string
   tasks: Task[]
   status: Task['status']
-  onMoveTask: (taskId: string, newStatus: Task['status']) => void
-  onUpdateTask: (id: string, updates: Partial<Task>) => void
-  onDeleteTask: (id: string) => void
+  droppableId: string
 }
 
 const KanbanColumn: React.FC<KanbanColumnProps> = ({
   title,
   tasks,
   status,
-  onMoveTask,
-  onUpdateTask,
-  onDeleteTask
+  droppableId
 }) => {
-  const getStatusColor = (status: Task['status']) => {
+  const getEmptyMessage = (status: Task['status']) => {
     switch (status) {
       case 'todo':
-        return 'bg-color-warning'
+        return { icon: '📝', message: 'No hay tareas pendientes' }
       case 'in-progress':
-        return 'bg-color-primary'
+        return { icon: '⚡', message: 'No hay tareas en progreso' }
       case 'done':
-        return 'bg-color-success'
+        return { icon: '✅', message: 'No hay tareas completadas' }
       default:
-        return 'bg-color-secondary'
+        return { icon: '📋', message: 'No hay tareas' }
     }
   }
 
+  const emptyState = getEmptyMessage(status)
+
   return (
-    <div className="bg-bg-secondary rounded-lg p-4 min-h-[500px]">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-text-primary">{title}</h3>
-        <div className={`w-3 h-3 rounded-full ${getStatusColor(status)}`}></div>
-      </div>
-      
-      <div className="space-y-3">
-        {tasks.map(task => (
-          <TaskCard
-            key={task.id}
-            task={task}
-            onMoveTask={onMoveTask}
-            onUpdateTask={onUpdateTask}
-            onDeleteTask={onDeleteTask}
-          />
-        ))}
-        
-        {tasks.length === 0 && (
-          <div className="text-center py-8 text-text-muted">
-            <p>No hay tareas</p>
-          </div>
+    <ColumnContainer
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <ColumnHeader>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <ColumnTitle>{title}</ColumnTitle>
+          <StatusIndicator status={status} />
+        </div>
+        <TaskCount>{tasks.length}</TaskCount>
+      </ColumnHeader>
+
+      <Droppable droppableId={droppableId}>
+        {(provided, snapshot) => (
+          <TaskList
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            isDraggingOver={snapshot.isDraggingOver}
+          >
+            {tasks.length === 0 ? (
+              <EmptyState
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <EmptyIcon>{emptyState.icon}</EmptyIcon>
+                <p>{emptyState.message}</p>
+              </EmptyState>
+            ) : (
+              tasks.map((task, index) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  index={index}
+                />
+              ))
+            )}
+            {provided.placeholder}
+          </TaskList>
         )}
-      </div>
-    </div>
+      </Droppable>
+    </ColumnContainer>
   )
 }
 
-export default KanbanColumn 
+export default KanbanColumn
