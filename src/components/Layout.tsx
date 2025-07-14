@@ -52,6 +52,7 @@ const BrandText = styled.span`
   font-size: 18px;
   font-weight: 700;
   color: var(--text-primary);
+  margin-right: 30px;
 `
 
 const NavLinks = styled.div`

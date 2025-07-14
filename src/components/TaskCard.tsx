@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react'
 import styled from 'styled-components'
-import { Draggable } from 'react-beautiful-dnd'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { motion } from 'framer-motion'
 import { Task } from '../types'
 import { useTaskStore } from '../store/useTaskStore'
@@ -266,85 +267,92 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, index }) => {
     }
   }, [task.id, deleteTask, addToast])
 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: task.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition
+  };
   return (
-    <Draggable draggableId={task.id} index={index}>
-      {(provided, snapshot) => (
-        <CardContainer
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          {...provided.dragHandleProps}
-          isDragging={snapshot.isDragging}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          {isEditing ? (
-            <EditForm>
-              <Input
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                placeholder="Título de la tarea"
-                autoFocus
-              />
-              <TextArea
-                value={editDescription}
-                onChange={(e) => setEditDescription(e.target.value)}
-                placeholder="Descripción de la tarea"
-              />
-              <ButtonGroup>
-                <Button variant="primary" onClick={handleSave}>
-                  Guardar
-                </Button>
-                <Button onClick={handleCancel}>
-                  Cancelar
-                </Button>
-              </ButtonGroup>
-            </EditForm>
-          ) : (
-            <>
-              <TaskHeader>
-                <TaskTitle>{task.title}</TaskTitle>
-                <ActionButtons>
-                  <ActionButton
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setIsEditing(true)
-                    }}
-                    title="Editar tarea"
-                  >
-                    ✏️
-                  </ActionButton>
-                  <ActionButton
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDelete()
-                    }}
-                    title="Eliminar tarea"
-                  >
-                    🗑️
-                  </ActionButton>
-                </ActionButtons>
-              </TaskHeader>
-
-              {task.description && (
-                <TaskDescription>{task.description}</TaskDescription>
-              )}
-
-              <TaskFooter>
-                <PriorityBadge priority={task.priority}>
-                  {priorityLabels[task.priority]}
-                </PriorityBadge>
-                <TaskDate>
-                  {task.createdAt.toLocaleDateString('es-ES', {
-                    day: 'numeric',
-                    month: 'short'
-                  })}
-                </TaskDate>
-              </TaskFooter>
-            </>
+    <CardContainer
+      ref={setNodeRef}
+      style={style}
+      isDragging={isDragging}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      {...attributes}
+      {...listeners}
+    >
+      {isEditing ? (
+        <EditForm>
+          <Input
+            value={editTitle}
+            onChange={(e) => setEditTitle(e.target.value)}
+            placeholder="Título de la tarea"
+            autoFocus
+          />
+          <TextArea
+            value={editDescription}
+            onChange={(e) => setEditDescription(e.target.value)}
+            placeholder="Descripción de la tarea"
+          />
+          <ButtonGroup>
+            <Button variant="primary" onClick={handleSave}>
+              Guardar
+            </Button>
+            <Button onClick={handleCancel}>
+              Cancelar
+            </Button>
+          </ButtonGroup>
+        </EditForm>
+      ) :
+        (<>
+          <TaskHeader>
+            <TaskTitle>{task.title}</TaskTitle>
+            <ActionButtons>
+              <ActionButton
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsEditing(true)
+                }}
+                title="Editar tarea"
+              >
+                ✏️
+              </ActionButton>
+              <ActionButton
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleDelete()
+                }}
+                title="Eliminar tarea"
+              >
+                🗑️
+              </ActionButton>
+            </ActionButtons>
+          </TaskHeader>
+          {task.description && (
+            <TaskDescription>{task.description}</TaskDescription>
           )}
-        </CardContainer>
-      )}
-    </Draggable>
+          <TaskFooter>
+            <PriorityBadge priority={task.priority}>
+              {priorityLabels[task.priority]}
+            </PriorityBadge>
+            <TaskDate>
+              {new Date(task.createdAt).toLocaleDateString('es-ES', {
+                day: 'numeric',
+                month: 'short'
+              })}
+            </TaskDate>
+          </TaskFooter>
+        </>)
+      }
+    </CardContainer>
   )
 }
 

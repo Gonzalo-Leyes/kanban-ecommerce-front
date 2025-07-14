@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import styled from 'styled-components'
-import { DragDropContext, DropResult } from 'react-beautiful-dnd'
+import { DndContext, DragEndEvent } from '@dnd-kit/core'
+import { SortableContext, arrayMove } from '@dnd-kit/sortable'
 import { motion } from 'framer-motion'
 import { Task } from '../types'
 import { useTaskStore } from '../store/useTaskStore'
@@ -128,33 +129,47 @@ const Kanban: React.FC = () => {
     return { totalTasks, completedTasks, completionRate }
   }, [tasks.length, tasksByStatus.done.length])
 
-  const handleDragEnd = useCallback((result: DropResult) => {
-    const { destination, source, draggableId } = result
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
-    if (!destination) return
+    // Find the source and destination columns
+    let sourceStatus: Task['status'] | undefined;
+    let destinationStatus: Task['status'] | undefined;
+    Object.entries(tasksByStatus).forEach(([status, tasks]) => {
+      if (tasks.some(task => task.id === active.id)) sourceStatus = status as Task['status'];
+      if (tasks.some(task => task.id === over.id)) destinationStatus = status as Task['status'];
+    });
 
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    ) {
-      return
+    if (!sourceStatus || !destinationStatus) return;
+
+    // If moving to a different column
+    if (sourceStatus !== destinationStatus) {
+      moveTask(active.id as string, destinationStatus);
+      const statusLabels = {
+        'todo': 'Por Hacer',
+        'in-progress': 'En Progreso',
+        'done': 'Completado'
+      };
+      addToast({
+        type: 'success',
+        title: 'Tarea movida',
+        message: `Tarea movida a ${statusLabels[destinationStatus]}`
+      });
+    } else {
+      // Reorder within the same column
+      const columnTasks = tasksByStatus[sourceStatus];
+      const oldIndex = columnTasks.findIndex(task => task.id === active.id);
+      const newIndex = columnTasks.findIndex(task => task.id === over.id);
+      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+        const newTasks = arrayMove(columnTasks, oldIndex, newIndex);
+        reorderTasks([
+          ...tasks.filter(task => task.status !== sourceStatus),
+          ...newTasks
+        ]);
+      }
     }
-
-    const newStatus = destination.droppableId as Task['status']
-    moveTask(draggableId, newStatus)
-
-    const statusLabels = {
-      'todo': 'Por Hacer',
-      'in-progress': 'En Progreso',
-      'done': 'Completado'
-    }
-
-    addToast({
-      type: 'success',
-      title: 'Tarea movida',
-      message: `Tarea movida a ${statusLabels[newStatus]}`
-    })
-  }, [moveTask, addToast])
+  }, [tasks, tasksByStatus, moveTask, reorderTasks, addToast]);
 
   return (
     <KanbanContainer>
@@ -169,23 +184,19 @@ const Kanban: React.FC = () => {
             Organiza y gestiona tus tareas de manera eficiente
           </Subtitle>
         </HeaderContent>
-        
         <HeaderActions>
           <StatsCard>
             <StatsNumber>{stats.totalTasks}</StatsNumber>
             <StatsLabel>Total</StatsLabel>
           </StatsCard>
-          
           <StatsCard>
             <StatsNumber>{stats.completedTasks}</StatsNumber>
             <StatsLabel>Completadas</StatsLabel>
           </StatsCard>
-          
           <StatsCard>
             <StatsNumber>{stats.completionRate}%</StatsNumber>
             <StatsLabel>Progreso</StatsLabel>
           </StatsCard>
-          
           <AddTaskButton
             onClick={() => setShowForm(true)}
             whileHover={{ scale: 1.02 }}
@@ -196,8 +207,7 @@ const Kanban: React.FC = () => {
           </AddTaskButton>
         </HeaderActions>
       </KanbanHeader>
-
-      <DragDropContext onDragEnd={handleDragEnd}>
+      <DndContext onDragEnd={handleDragEnd}>
         <ColumnsContainer>
           <KanbanColumn
             title="Por Hacer"
@@ -218,8 +228,7 @@ const Kanban: React.FC = () => {
             droppableId="done"
           />
         </ColumnsContainer>
-      </DragDropContext>
-
+      </DndContext>
       <TaskForm
         isOpen={showForm}
         onClose={() => setShowForm(false)}

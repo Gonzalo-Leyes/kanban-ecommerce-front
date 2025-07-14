@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import styled from 'styled-components'
-import { Droppable } from 'react-beautiful-dnd'
+import { SortableContext } from '@dnd-kit/sortable'
+import { useDroppable } from '@dnd-kit/core'
 import { motion } from 'framer-motion'
 import { Task } from '../types'
 import TaskCard from './TaskCard'
@@ -120,7 +121,9 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
   }
 
   const emptyState = getEmptyMessage(status)
-
+  const { setNodeRef, isOver } = useDroppable({ id: droppableId });
+  // Memoize the items array to prevent re-render loops
+  const itemIds = useMemo(() => tasks.map(task => task.id), [tasks]);
   return (
     <ColumnContainer
       initial={{ opacity: 0, y: 20 }}
@@ -134,36 +137,31 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
         </div>
         <TaskCount>{tasks.length}</TaskCount>
       </ColumnHeader>
-
-      <Droppable droppableId={droppableId}>
-        {(provided, snapshot) => (
-          <TaskList
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-            isDraggingOver={snapshot.isDraggingOver}
-          >
-            {tasks.length === 0 ? (
-              <EmptyState
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
-              >
-                <EmptyIcon>{emptyState.icon}</EmptyIcon>
-                <p>{emptyState.message}</p>
-              </EmptyState>
-            ) : (
-              tasks.map((task, index) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  index={index}
-                />
-              ))
-            )}
-            {provided.placeholder}
-          </TaskList>
-        )}
-      </Droppable>
+      <SortableContext items={itemIds}>
+        <TaskList
+          ref={setNodeRef}
+          isDraggingOver={isOver}
+        >
+          {tasks.length === 0 ? (
+            <EmptyState
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              <EmptyIcon>{emptyState.icon}</EmptyIcon>
+              <p>{emptyState.message}</p>
+            </EmptyState>
+          ) : (
+            tasks.map((task, index) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                index={index}
+              />
+            ))
+          )}
+        </TaskList>
+      </SortableContext>
     </ColumnContainer>
   )
 }

@@ -26,12 +26,12 @@ const ImageContainer = styled.div`
   overflow: hidden;
 `
 
-const ProductImage = styled.img<{ loading: boolean }>`
+const ProductImage = styled.img<{ $loading: boolean }>`
   width: 100%;
   height: 100%;
   object-fit: cover;
   transition: all 0.3s ease;
-  opacity: ${({ loading }) => loading ? 0 : 1};
+  opacity: ${({ $loading }) => $loading ? 0 : 1};
   
   ${Card}:hover & {
     transform: scale(1.05);
@@ -255,7 +255,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
           <ProductImage
             src={product.thumbnail}
             alt={product.title}
-            loading={imageLoading}
+            $loading={imageLoading}
             onLoad={() => setImageLoading(false)}
             onError={() => {
               setImageLoading(false)
