@@ -55,9 +55,9 @@ export const useProductStore = create<ProductState>((set, get) => ({
     if (filters.search) {
       const searchLower = filters.search.toLowerCase()
       result = result.filter(product =>
-        product.title.toLowerCase().includes(searchLower) ||
-        product.description.toLowerCase().includes(searchLower) ||
-        product.brand.toLowerCase().includes(searchLower)
+        (product.title || '').toLowerCase().includes(searchLower) ||
+        (product.description || '').toLowerCase().includes(searchLower) ||
+        (product.brand || '').toLowerCase().includes(searchLower)
       )
     }
 
