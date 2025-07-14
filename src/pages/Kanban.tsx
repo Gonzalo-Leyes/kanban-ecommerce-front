@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import styled from 'styled-components'
 import { DragDropContext, DropResult } from 'react-beautiful-dnd'
 import { motion } from 'framer-motion'
@@ -114,17 +114,25 @@ const Kanban: React.FC = () => {
   const { tasks, moveTask, reorderTasks } = useTaskStore()
   const { addToast } = useToast()
 
-  const todoTasks = tasks.filter(task => task.status === 'todo')
-  const inProgressTasks = tasks.filter(task => task.status === 'in-progress')
-  const doneTasks = tasks.filter(task => task.status === 'done')
+  const tasksByStatus = useMemo(() => ({
+    todo: tasks.filter(task => task.status === 'todo'),
+    'in-progress': tasks.filter(task => task.status === 'in-progress'),
+    done: tasks.filter(task => task.status === 'done')
+  }), [tasks])
 
-  const handleDragEnd = (result: DropResult) => {
+  const stats = useMemo(() => {
+    const totalTasks = tasks.length
+    const completedTasks = tasksByStatus.done.length
+    const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+    
+    return { totalTasks, completedTasks, completionRate }
+  }, [tasks.length, tasksByStatus.done.length])
+
+  const handleDragEnd = useCallback((result: DropResult) => {
     const { destination, source, draggableId } = result
 
-    // Si no hay destino, no hacer nada
     if (!destination) return
 
-    // Si se soltó en la misma posición, no hacer nada
     if (
       destination.droppableId === source.droppableId &&
       destination.index === source.index
@@ -132,13 +140,9 @@ const Kanban: React.FC = () => {
       return
     }
 
-    // Obtener el nuevo status basado en el droppableId
     const newStatus = destination.droppableId as Task['status']
-    
-    // Mover la tarea al nuevo status
     moveTask(draggableId, newStatus)
 
-    // Mostrar notificación
     const statusLabels = {
       'todo': 'Por Hacer',
       'in-progress': 'En Progreso',
@@ -150,11 +154,7 @@ const Kanban: React.FC = () => {
       title: 'Tarea movida',
       message: `Tarea movida a ${statusLabels[newStatus]}`
     })
-  }
-
-  const totalTasks = tasks.length
-  const completedTasks = doneTasks.length
-  const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+  }, [moveTask, addToast])
 
   return (
     <KanbanContainer>
@@ -172,17 +172,17 @@ const Kanban: React.FC = () => {
         
         <HeaderActions>
           <StatsCard>
-            <StatsNumber>{totalTasks}</StatsNumber>
+            <StatsNumber>{stats.totalTasks}</StatsNumber>
             <StatsLabel>Total</StatsLabel>
           </StatsCard>
           
           <StatsCard>
-            <StatsNumber>{completedTasks}</StatsNumber>
+            <StatsNumber>{stats.completedTasks}</StatsNumber>
             <StatsLabel>Completadas</StatsLabel>
           </StatsCard>
           
           <StatsCard>
-            <StatsNumber>{completionRate}%</StatsNumber>
+            <StatsNumber>{stats.completionRate}%</StatsNumber>
             <StatsLabel>Progreso</StatsLabel>
           </StatsCard>
           
@@ -201,19 +201,19 @@ const Kanban: React.FC = () => {
         <ColumnsContainer>
           <KanbanColumn
             title="Por Hacer"
-            tasks={todoTasks}
+            tasks={tasksByStatus.todo}
             status="todo"
             droppableId="todo"
           />
           <KanbanColumn
             title="En Progreso"
-            tasks={inProgressTasks}
+            tasks={tasksByStatus['in-progress']}
             status="in-progress"
             droppableId="in-progress"
           />
           <KanbanColumn
             title="Completado"
-            tasks={doneTasks}
+            tasks={tasksByStatus.done}
             status="done"
             droppableId="done"
           />

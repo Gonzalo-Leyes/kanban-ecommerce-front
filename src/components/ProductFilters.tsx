@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import styled from 'styled-components'
 import { motion } from 'framer-motion'
 import { ProductFilters as ProductFiltersType } from '../types'
@@ -165,20 +165,19 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState(filters.search)
 
-  // Debounce para la búsqueda
   useEffect(() => {
     const timer = setTimeout(() => {
       onFiltersChange({ ...filters, search: searchTerm })
     }, 300)
 
     return () => clearTimeout(timer)
-  }, [searchTerm])
+  }, [searchTerm, filters, onFiltersChange])
 
-  const handleFilterChange = (key: keyof ProductFiltersType, value: any) => {
+  const handleFilterChange = useCallback((key: keyof ProductFiltersType, value: any) => {
     onFiltersChange({ ...filters, [key]: value })
-  }
+  }, [filters, onFiltersChange])
 
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     const clearedFilters: ProductFiltersType = {
       category: '',
       sortBy: 'name',
@@ -189,11 +188,11 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
     }
     setSearchTerm('')
     onFiltersChange(clearedFilters)
-  }
+  }, [onFiltersChange])
 
-  const formatCategoryName = (category: string) => {
+  const formatCategoryName = useCallback((category: string) => {
     return category.charAt(0).toUpperCase() + category.slice(1).replace('-', ' ')
-  }
+  }, [])
 
   return (
     <FiltersContainer

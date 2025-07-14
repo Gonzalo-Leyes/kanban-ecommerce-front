@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useCallback, useMemo } from 'react'
 import styled from 'styled-components'
 import { motion } from 'framer-motion'
 import { useProductStore } from '../store/useProductStore'
@@ -186,22 +186,27 @@ const Products: React.FC = () => {
     loadProducts()
   }, [setProducts, setLoading, setError, addToast])
 
-  const handleAddToCart = (productId: number) => {
-    // Aquí se implementaría la lógica del carrito
+  const handleAddToCart = useCallback((productId: number) => {
     console.log('Producto agregado al carrito:', productId)
-  }
+  }, [])
 
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     window.location.reload()
-  }
+  }, [])
 
-  // Paginación
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const currentProducts = filteredProducts.slice(startIndex, endIndex)
+  const paginationData = useMemo(() => {
+    const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    const currentProducts = filteredProducts.slice(startIndex, endIndex)
+    
+    return { totalPages, currentProducts }
+  }, [filteredProducts, currentPage, itemsPerPage])
 
-  const categories = Array.from(new Set(products.map(p => p.category)))
+  const categories = useMemo(() => 
+    Array.from(new Set(products.map(p => p.category))), 
+    [products]
+  )
 
   if (loading) {
     return (
@@ -271,7 +276,7 @@ const Products: React.FC = () => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, staggerChildren: 0.1 }}
           >
-            {currentProducts.map((product, index) => (
+            {paginationData.currentProducts.map((product, index) => (
               <motion.div
                 key={product.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -288,7 +293,7 @@ const Products: React.FC = () => {
 
           <Pagination
             currentPage={currentPage}
-            totalPages={totalPages}
+            totalPages={paginationData.totalPages}
             onPageChange={setCurrentPage}
             itemsPerPage={itemsPerPage}
             totalItems={filteredProducts.length}

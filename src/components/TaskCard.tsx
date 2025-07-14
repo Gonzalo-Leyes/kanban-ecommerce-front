@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import styled from 'styled-components'
 import { Draggable } from 'react-beautiful-dnd'
 import { motion } from 'framer-motion'
@@ -220,20 +220,13 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, index }) => {
   const { updateTask, deleteTask } = useTaskStore()
   const { addToast } = useToast()
 
-  const getPriorityLabel = (priority: Task['priority']) => {
-    switch (priority) {
-      case 'high':
-        return 'Alta'
-      case 'medium':
-        return 'Media'
-      case 'low':
-        return 'Baja'
-      default:
-        return priority
-    }
-  }
+  const priorityLabels = useMemo(() => ({
+    high: 'Alta',
+    medium: 'Media',
+    low: 'Baja'
+  }), [])
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     if (!editTitle.trim()) {
       addToast({
         type: 'error',
@@ -254,15 +247,15 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, index }) => {
       title: 'Tarea actualizada',
       message: 'Los cambios se han guardado correctamente'
     })
-  }
+  }, [editTitle, editDescription, task.id, updateTask, addToast])
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     setEditTitle(task.title)
     setEditDescription(task.description)
     setIsEditing(false)
-  }
+  }, [task.title, task.description])
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     if (window.confirm('¿Estás seguro de que quieres eliminar esta tarea?')) {
       deleteTask(task.id)
       addToast({
@@ -271,7 +264,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, index }) => {
         message: 'La tarea se ha eliminado correctamente'
       })
     }
-  }
+  }, [task.id, deleteTask, addToast])
 
   return (
     <Draggable draggableId={task.id} index={index}>
@@ -338,7 +331,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, index }) => {
 
               <TaskFooter>
                 <PriorityBadge priority={task.priority}>
-                  {getPriorityLabel(task.priority)}
+                  {priorityLabels[task.priority]}
                 </PriorityBadge>
                 <TaskDate>
                   {task.createdAt.toLocaleDateString('es-ES', {

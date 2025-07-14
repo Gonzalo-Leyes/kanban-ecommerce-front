@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react'
 import { Theme } from '../types'
 
 interface ThemeContextType {
@@ -22,36 +22,35 @@ interface ThemeProviderProps {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>(() => {
-    // Intentar obtener el tema del localStorage
-    const savedTheme = localStorage.getItem('theme') as Theme
-    if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
-      return savedTheme
+    try {
+      const savedTheme = localStorage.getItem('theme') as Theme
+      if (savedTheme === 'light' || savedTheme === 'dark') {
+        return savedTheme
+      }
+      
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    } catch {
+      return 'light'
     }
-    
-    // Detectar preferencia del sistema
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark'
-    }
-    
-    return 'light'
   })
 
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light')
-  }
+  const toggleTheme = useCallback(() => {
+    setTheme(current => current === 'light' ? 'dark' : 'light')
+  }, [])
 
   useEffect(() => {
-    // Guardar en localStorage
-    localStorage.setItem('theme', theme)
-    
-    // Aplicar tema al documento
-    document.documentElement.setAttribute('data-theme', theme)
+    try {
+      localStorage.setItem('theme', theme)
+      document.documentElement.setAttribute('data-theme', theme)
+    } catch (error) {
+      console.warn('Failed to save theme preference:', error)
+    }
   }, [theme])
 
-  const value = {
+  const value = useMemo(() => ({
     theme,
     toggleTheme
-  }
+  }), [theme, toggleTheme])
 
   return (
     <ThemeContext.Provider value={value}>

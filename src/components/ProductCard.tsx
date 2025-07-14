@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import styled from 'styled-components'
 import { motion } from 'framer-motion'
 import { Product } from '../types'
@@ -203,14 +203,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
   const [imageError, setImageError] = useState(false)
   const { addToast } = useToast()
 
-  const formatPrice = (price: number) => {
+  const formatPrice = useCallback((price: number) => {
     return new Intl.NumberFormat('es-ES', {
       style: 'currency',
       currency: 'USD'
     }).format(price)
-  }
+  }, [])
 
-  const renderStars = (rating: number) => {
+  const renderStars = useCallback((rating: number) => {
     const stars = []
     const fullStars = Math.floor(rating)
     const hasHalfStar = rating % 1 >= 0.5
@@ -226,19 +226,21 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
     }
 
     return stars
-  }
+  }, [])
 
-  const handleAddToCart = () => {
+  const handleAddToCart = useCallback(() => {
     onAddToCart(product.id)
     addToast({
       type: 'success',
       title: 'Producto agregado',
       message: `${product.title} se agregó al carrito`
     })
-  }
+  }, [product.id, product.title, onAddToCart, addToast])
 
-  const isLowStock = product.stock <= 10
-  const isOutOfStock = product.stock === 0
+  const stockStatus = useMemo(() => ({
+    isLowStock: product.stock <= 10,
+    isOutOfStock: product.stock === 0
+  }), [product.stock])
 
   return (
     <Card
@@ -280,9 +282,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
         
         <ProductMeta>
           <Brand>Marca: {product.brand}</Brand>
-          <Stock lowStock={isLowStock}>
+          <Stock lowStock={stockStatus.isLowStock}>
             Stock: {product.stock}
-            {isLowStock && !isOutOfStock && ' (Poco stock)'}
+            {stockStatus.isLowStock && !stockStatus.isOutOfStock && ' (Poco stock)'}
           </Stock>
         </ProductMeta>
 
@@ -295,12 +297,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
         </PriceSection>
 
         <AddToCartButton
-          disabled={isOutOfStock}
+          disabled={stockStatus.isOutOfStock}
           onClick={handleAddToCart}
           whileTap={{ scale: 0.95 }}
         >
           <span>🛒</span>
-          {isOutOfStock ? 'Sin stock' : 'Agregar al carrito'}
+          {stockStatus.isOutOfStock ? 'Sin stock' : 'Agregar al carrito'}
         </AddToCartButton>
       </CardContent>
     </Card>

@@ -49,50 +49,57 @@ export const useProductStore = create<ProductState>((set, get) => ({
 
   applyFilters: () => {
     const { products, filters } = get()
-    let result = [...products]
+    
+    if (!products.length) {
+      set({ filteredProducts: [] })
+      return
+    }
+    
+    let result = products.filter(product => {
+      // Filtro por búsqueda
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase()
+        const matchesSearch = [
+          product.title || '',
+          product.description || '',
+          product.brand || ''
+        ].some(field => field.toLowerCase().includes(searchLower))
+        
+        if (!matchesSearch) return false
+      }
 
-    // Filtro por búsqueda
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase()
-      result = result.filter(product =>
-        (product.title || '').toLowerCase().includes(searchLower) ||
-        (product.description || '').toLowerCase().includes(searchLower) ||
-        (product.brand || '').toLowerCase().includes(searchLower)
-      )
-    }
+      // Filtro por categoría
+      if (filters.category && product.category !== filters.category) {
+        return false
+      }
 
-    // Filtro por categoría
-    if (filters.category) {
-      result = result.filter(product => product.category === filters.category)
-    }
+      // Filtro por precio
+      if (filters.minPrice !== undefined && product.price < filters.minPrice) {
+        return false
+      }
+      if (filters.maxPrice !== undefined && product.price > filters.maxPrice) {
+        return false
+      }
 
-    // Filtro por precio
-    if (filters.minPrice !== undefined) {
-      result = result.filter(product => product.price >= filters.minPrice!)
-    }
-    if (filters.maxPrice !== undefined) {
-      result = result.filter(product => product.price <= filters.maxPrice!)
-    }
+      // Filtro por rating
+      if (filters.minRating !== undefined && product.rating < filters.minRating) {
+        return false
+      }
 
-    // Filtro por rating
-    if (filters.minRating !== undefined) {
-      result = result.filter(product => product.rating >= filters.minRating!)
-    }
+      return true
+    })
 
     // Ordenamiento
-    switch (filters.sortBy) {
-      case 'price-asc':
-        result.sort((a, b) => a.price - b.price)
-        break
-      case 'price-desc':
-        result.sort((a, b) => b.price - a.price)
-        break
-      case 'rating':
-        result.sort((a, b) => b.rating - a.rating)
-        break
-      case 'name':
-        result.sort((a, b) => a.title.localeCompare(b.title))
-        break
+    const sortFunctions = {
+      'price-asc': (a: Product, b: Product) => a.price - b.price,
+      'price-desc': (a: Product, b: Product) => b.price - a.price,
+      'rating': (a: Product, b: Product) => b.rating - a.rating,
+      'name': (a: Product, b: Product) => a.title.localeCompare(b.title)
+    }
+    
+    const sortFn = sortFunctions[filters.sortBy]
+    if (sortFn) {
+      result.sort(sortFn)
     }
 
     set({ filteredProducts: result })
