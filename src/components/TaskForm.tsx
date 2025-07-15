@@ -211,7 +211,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose }) => {
       message: 'La nueva tarea se ha agregado correctamente'
     })
 
-    // Reset form
+
     setTitle('')
     setDescription('')
     setPriority('medium')

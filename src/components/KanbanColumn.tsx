@@ -101,7 +101,7 @@ interface KanbanColumnProps {
   droppableId: string
 }
 
-const KanbanColumn: React.FC<KanbanColumnProps> = ({
+const KanbanColumnComponent: React.FC<KanbanColumnProps> = ({
   title,
   tasks,
   status,
@@ -120,12 +120,60 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
     }
   }
 
-  const emptyState = getEmptyMessage(status)
-  const { setNodeRef, isOver } = useDroppable({ id: droppableId });
-  // Memoize the items array to prevent re-render loops
+
+  const { setNodeRef, isOver } = useDroppable({ 
+    id: droppableId,
+    data: {
+      type: 'column',
+      status: status,
+      accepts: ['todo', 'in-progress', 'done']
+    }
+  });
+  
+
+  const columnStyle = useMemo<React.CSSProperties>(() => ({
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    minHeight: '400px',
+    backgroundColor: isOver ? 'rgba(0, 0, 0, 0.03)' : 'transparent',
+    borderRadius: '8px',
+    padding: '8px',
+    transition: 'background-color 0.2s ease',
+    border: isOver ? '2px dashed var(--color-primary)' : '1px solid var(--border-color)'
+  }), [isOver]);
+  
+
   const itemIds = useMemo(() => tasks.map(task => task.id), [tasks]);
+  
+
+  const taskList = useMemo(() => {
+    if (tasks.length === 0) {
+      return (
+        <EmptyState
+          key="empty-state"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          <EmptyIcon>{getEmptyMessage(status).icon}</EmptyIcon>
+          <p>{getEmptyMessage(status).message}</p>
+        </EmptyState>
+      );
+    }
+    
+    return tasks.map((task, index) => (
+      <TaskCard
+        key={task.id}
+        task={task}
+        index={index}
+      />
+    ));
+  }, [tasks, status]);
   return (
     <ColumnContainer
+      ref={setNodeRef}
+      style={columnStyle}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
@@ -138,32 +186,23 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
         <TaskCount>{tasks.length}</TaskCount>
       </ColumnHeader>
       <SortableContext items={itemIds}>
-        <TaskList
-          ref={setNodeRef}
-          isDraggingOver={isOver}
-        >
-          {tasks.length === 0 ? (
-            <EmptyState
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-            >
-              <EmptyIcon>{emptyState.icon}</EmptyIcon>
-              <p>{emptyState.message}</p>
-            </EmptyState>
-          ) : (
-            tasks.map((task, index) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                index={index}
-              />
-            ))
-          )}
+        <TaskList isDraggingOver={isOver}>
+          {taskList}
         </TaskList>
       </SortableContext>
     </ColumnContainer>
   )
-}
+};
 
-export default KanbanColumn
+const KanbanColumn = React.memo(KanbanColumnComponent, (prevProps, nextProps) => {
+
+  return (
+    prevProps.tasks === nextProps.tasks &&
+    prevProps.title === nextProps.title &&
+    prevProps.status === nextProps.status
+  );
+});
+
+KanbanColumn.displayName = 'KanbanColumn';
+
+export default KanbanColumn;

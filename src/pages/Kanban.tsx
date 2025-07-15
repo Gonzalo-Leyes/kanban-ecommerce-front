@@ -115,11 +115,34 @@ const Kanban: React.FC = () => {
   const { tasks, moveTask, reorderTasks } = useTaskStore()
   const { addToast } = useToast()
 
+
   const tasksByStatus = useMemo(() => ({
     todo: tasks.filter(task => task.status === 'todo'),
     'in-progress': tasks.filter(task => task.status === 'in-progress'),
     done: tasks.filter(task => task.status === 'done')
   }), [tasks])
+  
+
+  const columns = useMemo(() => [
+    { 
+      id: 'todo', 
+      title: 'Por Hacer', 
+      tasks: tasksByStatus.todo,
+      dataTestId: 'todo-column' 
+    },
+    { 
+      id: 'in-progress', 
+      title: 'En Progreso', 
+      tasks: tasksByStatus['in-progress'],
+      dataTestId: 'in-progress-column' 
+    },
+    { 
+      id: 'done', 
+      title: 'Completado', 
+      tasks: tasksByStatus.done,
+      dataTestId: 'done-column' 
+    }
+  ], [tasksByStatus])
 
   const stats = useMemo(() => {
     const totalTasks = tasks.length
@@ -131,45 +154,66 @@ const Kanban: React.FC = () => {
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
-    if (!over || active.id === over.id) return;
+    if (!over) return;
+    
 
-    // Find the source and destination columns
-    let sourceStatus: Task['status'] | undefined;
-    let destinationStatus: Task['status'] | undefined;
-    Object.entries(tasksByStatus).forEach(([status, tasks]) => {
-      if (tasks.some(task => task.id === active.id)) sourceStatus = status as Task['status'];
-      if (tasks.some(task => task.id === over.id)) destinationStatus = status as Task['status'];
-    });
+    const sourceColumn = columns.find(col => 
+      col.tasks.some(task => task.id === active.id)
+    );
+    
 
-    if (!sourceStatus || !destinationStatus) return;
+    let destinationColumn = columns.find(col => col.id === over.id);
+    
 
-    // If moving to a different column
-    if (sourceStatus !== destinationStatus) {
-      moveTask(active.id as string, destinationStatus);
-      const statusLabels = {
-        'todo': 'Por Hacer',
-        'in-progress': 'En Progreso',
-        'done': 'Completado'
-      };
+    if (!destinationColumn) {
+
+      const targetTaskColumn = columns.find(col => 
+        col.tasks.some(task => task.id === over.id)
+      );
+      if (targetTaskColumn) {
+        destinationColumn = targetTaskColumn;
+      } else {
+        return;
+      }
+    }
+    
+
+    if (!sourceColumn || !destinationColumn) return;
+    
+
+    const taskId = active.id as string;
+    
+
+    if (sourceColumn.id !== destinationColumn.id) {
+      moveTask(taskId, destinationColumn.id as Task['status']);
+      
       addToast({
         type: 'success',
         title: 'Tarea movida',
-        message: `Tarea movida a ${statusLabels[destinationStatus]}`
+        message: `Tarea movida a ${destinationColumn.title}`
       });
     } else {
-      // Reorder within the same column
-      const columnTasks = tasksByStatus[sourceStatus];
-      const oldIndex = columnTasks.findIndex(task => task.id === active.id);
-      const newIndex = columnTasks.findIndex(task => task.id === over.id);
-      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+
+      const columnTasks = [...sourceColumn.tasks];
+      const oldIndex = columnTasks.findIndex(task => task.id === taskId);
+      
+
+      const overTask = columnTasks.find(task => task.id === over.id);
+      let newIndex = columnTasks.length - 1;
+      
+      if (overTask) {
+        newIndex = columnTasks.findIndex(task => task.id === over.id);
+      }
+      
+      if (oldIndex !== -1 && oldIndex !== newIndex) {
         const newTasks = arrayMove(columnTasks, oldIndex, newIndex);
         reorderTasks([
-          ...tasks.filter(task => task.status !== sourceStatus),
+          ...tasks.filter(task => task.status !== sourceColumn.id),
           ...newTasks
         ]);
       }
     }
-  }, [tasks, tasksByStatus, moveTask, reorderTasks, addToast]);
+  }, [columns, moveTask, reorderTasks, addToast, tasks]);
 
   return (
     <KanbanContainer>
@@ -209,24 +253,28 @@ const Kanban: React.FC = () => {
       </KanbanHeader>
       <DndContext onDragEnd={handleDragEnd}>
         <ColumnsContainer>
-          <KanbanColumn
-            title="Por Hacer"
-            tasks={tasksByStatus.todo}
-            status="todo"
-            droppableId="todo"
-          />
-          <KanbanColumn
-            title="En Progreso"
-            tasks={tasksByStatus['in-progress']}
-            status="in-progress"
-            droppableId="in-progress"
-          />
-          <KanbanColumn
-            title="Completado"
-            tasks={tasksByStatus.done}
-            status="done"
-            droppableId="done"
-          />
+          {columns.map((column) => {
+            return (
+              <div 
+                key={column.id}
+                data-testid={column.dataTestId}
+                style={{
+                  height: '100%',
+                  minHeight: '400px',
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}
+              >
+                <KanbanColumn
+                  key={column.id}
+                  title={column.title}
+                  tasks={column.tasks}
+                  status={column.id as Task['status']}
+                  droppableId={column.id}
+                />
+              </div>
+            );
+          })}
         </ColumnsContainer>
       </DndContext>
       <TaskForm

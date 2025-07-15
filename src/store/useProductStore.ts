@@ -56,7 +56,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
     }
     
     let result = products.filter(product => {
-      // Filtro por búsqueda
+
       if (filters.search) {
         const searchLower = filters.search.toLowerCase()
         const matchesSearch = [
@@ -68,12 +68,12 @@ export const useProductStore = create<ProductState>((set, get) => ({
         if (!matchesSearch) return false
       }
 
-      // Filtro por categoría
+
       if (filters.category && product.category !== filters.category) {
         return false
       }
 
-      // Filtro por precio
+
       if (filters.minPrice !== undefined && product.price < filters.minPrice) {
         return false
       }
@@ -81,7 +81,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
         return false
       }
 
-      // Filtro por rating
+
       if (filters.minRating !== undefined && product.rating < filters.minRating) {
         return false
       }
@@ -89,7 +89,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
       return true
     })
 
-    // Ordenamiento
+
     const sortFunctions = {
       'price-asc': (a: Product, b: Product) => a.price - b.price,
       'price-desc': (a: Product, b: Product) => b.price - a.price,

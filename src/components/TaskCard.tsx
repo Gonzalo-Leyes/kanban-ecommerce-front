@@ -213,7 +213,7 @@ interface TaskCardProps {
   index: number
 }
 
-const TaskCardComponent: React.FC<TaskCardProps> = ({ task, index }) => {
+const TaskCardComponent: React.FC<TaskCardProps> = ({ task }) => {
   const [isEditing, setIsEditing] = useState(false)
   const [editTitle, setEditTitle] = useState(task.title)
   const [editDescription, setEditDescription] = useState(task.description)
@@ -279,15 +279,28 @@ const TaskCardComponent: React.FC<TaskCardProps> = ({ task, index }) => {
     transform: CSS.Transform.toString(transform),
     transition
   };
+
+  const cardProps = React.useMemo(() => ({
+    ref: setNodeRef,
+    style,
+    isDragging,
+    ...attributes,
+    ...listeners,
+    initial: { opacity: 0, y: 10 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -10 },
+    transition: { 
+      type: 'spring' as const, 
+      stiffness: 300, 
+      damping: 30 
+    },
+    whileHover: { scale: 1.02 },
+    whileTap: { scale: 0.98 }
+  }), [setNodeRef, style, isDragging, attributes, listeners]);
+
   return (
     <CardContainer
-      ref={setNodeRef}
-      style={style}
-      isDragging={isDragging}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      {...attributes}
-      {...listeners}
+      {...cardProps}
     >
       {isEditing ? (
         <EditForm>
@@ -356,5 +369,7 @@ const TaskCardComponent: React.FC<TaskCardProps> = ({ task, index }) => {
   )
 }
 
-const TaskCard = React.memo(TaskCardComponent)
-export default TaskCard
+const TaskCard = React.memo(TaskCardComponent);
+TaskCard.displayName = 'TaskCard';
+
+export default TaskCard;
