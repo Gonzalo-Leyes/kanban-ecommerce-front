@@ -62,7 +62,7 @@ const Label = styled.label`
   color: var(--text-primary);
   
   &::after {
-    content: ${({ required }: { required?: boolean }) => required ? '" *"' : '""'};
+    content:"*";
     color: var(--color-danger);
   }
 `
@@ -250,7 +250,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose }) => {
             
             <Form onSubmit={handleSubmit}>
               <FormGroup>
-                <Label htmlFor="title" required>
+                <Label htmlFor="title">
                   Título
                 </Label>
                 <Input

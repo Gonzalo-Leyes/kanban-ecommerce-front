@@ -24,6 +24,9 @@ const HeaderContainer = styled.div`
   max-width: 1280px;
   margin: 0 auto;
   padding: 0 24px;
+  @media (max-width: 767px) {
+    padding: 0 8px;
+  }
 `
 
 const Nav = styled.nav`
@@ -31,6 +34,12 @@ const Nav = styled.nav`
   align-items: center;
   justify-content: between;
   height: 72px;
+  @media (max-width: 767px) {
+    flex-direction: column;
+    align-items: stretch;
+    height: auto;
+    gap: 8px;
+  }
 `
 
 const Brand = styled(motion.div)`
@@ -59,9 +68,11 @@ const NavLinks = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-  
-  @media (max-width: 640px) {
+  @media (max-width: 767px) {
+    flex-direction: column;
     gap: 4px;
+    width: 100%;
+    margin: 8px 0;
   }
 `
 
@@ -111,7 +122,12 @@ const NavIcon = styled.span`
 const HeaderActions = styled.div`
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  @media (max-width: 767px) {
+    justify-content: flex-end;
+    width: 100%;
+    margin-bottom: 8px;
+  }
 `
 
 const Main = styled.main`

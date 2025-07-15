@@ -49,19 +49,19 @@ const Subtitle = styled.p`
 
 const ProductsGrid = styled(motion.div)`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 24px;
   margin-bottom: 32px;
   
-  @media (max-width: 640px) {
+  @media (max-width: 767px) {
     grid-template-columns: 1fr;
   }
   
-  @media (min-width: 641px) and (max-width: 1024px) {
+  @media (min-width: 768px) and (max-width: 1279px) {
     grid-template-columns: repeat(2, 1fr);
   }
   
-  @media (min-width: 1025px) {
+  @media (min-width: 1280px) {
     grid-template-columns: repeat(4, 1fr);
   }
 `

@@ -9,6 +9,11 @@ const PaginationContainer = styled.div`
   gap: 8px;
   margin-top: 32px;
   padding: 20px 0;
+  @media (max-width: 767px) {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 0;
+  }
 `
 
 const PaginationButton = styled(motion.button)<{ active?: boolean; disabled?: boolean }>`

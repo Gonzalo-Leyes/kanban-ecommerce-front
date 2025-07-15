@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import styled from 'styled-components'
 import { DndContext, DragEndEvent } from '@dnd-kit/core'
-import { SortableContext, arrayMove } from '@dnd-kit/sortable'
+import { arrayMove } from '@dnd-kit/sortable'
 import { motion } from 'framer-motion'
 import { Task } from '../types'
 import { useTaskStore } from '../store/useTaskStore'

@@ -213,7 +213,7 @@ interface TaskCardProps {
   index: number
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, index }) => {
+const TaskCardComponent: React.FC<TaskCardProps> = ({ task, index }) => {
   const [isEditing, setIsEditing] = useState(false)
   const [editTitle, setEditTitle] = useState(task.title)
   const [editDescription, setEditDescription] = useState(task.description)
@@ -356,4 +356,5 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, index }) => {
   )
 }
 
+const TaskCard = React.memo(TaskCardComponent)
 export default TaskCard
